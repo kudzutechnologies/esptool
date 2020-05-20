@@ -282,7 +282,16 @@ class ESPLoader(object):
               + (packet.replace(b'\xdb',b'\xdb\xdd').replace(b'\xc0',b'\xdb\xdc')) \
               + b'\xc0'
         self.trace("Write %d bytes: %s", len(buf), HexFormatter(buf))
-        self._port.write(buf)
+
+        ofs = 0
+        csz = 63
+        while ofs < len(buf):
+            sz = len(buf) - ofs
+            if sz > csz:
+                sz = csz
+            self.trace("Write %d chunk: %s", sz, HexFormatter(buf[ofs:ofs+sz]))
+            self._port.write(buf[ofs:ofs+sz])
+            ofs += sz
 
     def trace(self, message, *format_args):
         if self._trace_enabled:
@@ -431,7 +440,7 @@ class ESPLoader(object):
                 # it exploits a silicon bug spurious watchdog reset.
                 time.sleep(0.4)  # allow watchdog reset to occur
             time.sleep(0.05)
-            self._setDTR(False)  # IO0=HIGH, done
+            # self._setDTR(False)  # IO0=HIGH, done
 
         for _ in range(5):
             try:
